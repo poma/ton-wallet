@@ -1,0 +1,39 @@
+version: "2.2"
+
+volumes:
+  redis:
+
+services:
+  bot:
+    build: .
+    environment:
+      # How to create bot: https://core.telegram.org/bots#3-how-do-i-create-a-bot
+      BOT_TOKEN: ...
+      REDIS_URL: redis
+
+  redis:
+    image: redis
+    restart: always
+    command: [redis-server, --appendonly, 'yes']
+    volumes:
+      - redis:/data
+
+  nginx:
+    image: jwilder/nginx-proxy
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/nginx/certs
+      - /etc/nginx/vhost.d
+      - /usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  letsencrypt:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    restart: always
+    volumes_from:
+      - nginx
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
