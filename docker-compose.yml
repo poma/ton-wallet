@@ -5,11 +5,19 @@ volumes:
 
 services:
   bot:
-    build: .
+    build: bot
+    restart: always
     environment:
       # How to create bot: https://core.telegram.org/bots#3-how-do-i-create-a-bot
       BOT_TOKEN: ...
       REDIS_URL: redis
+
+  ui:
+    build: ui
+    restart: always
+    environment:
+      VIRTUAL_HOST: gramwallet.app
+      LETSENCRYPT_HOST: gramwallet.app
 
   redis:
     image: redis
