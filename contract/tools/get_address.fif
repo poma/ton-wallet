@@ -1,0 +1,6 @@
+"TonUtil.fif" include
+
+"keys/contract.addr" load-address
+
+6 .Addr cr
+

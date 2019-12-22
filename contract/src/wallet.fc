@@ -24,6 +24,11 @@ _ get_contract_state() inline_ref {
         .end_cell());
 }
 
+() try_init() impure inline_ref {
+  ;; first query without signatures is always accepted
+  accept_message();
+}
+
 ;; called by user to submit initial transaction
 () submit_transaction(slice msg) {
     var signature = msg~load_bits(512);
@@ -108,6 +113,10 @@ _ get_contract_state() inline_ref {
 }
 
 () recv_external(slice msg) impure {
+    if (slice_empty?(msg)) {
+        return try_init();
+    }
+
     var op = msg~load_uint(8);
     if (op == 0x01) {
         submit_transaction(msg);
