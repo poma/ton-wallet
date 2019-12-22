@@ -32,7 +32,8 @@ dest_addr 2dup bounce 7 + .Addr ." = " .addr
 <b b{01} s, bounce 1 i, b{000100} s, dest_addr addr, amount Gram, 0 9 64 32 + + 1+ u, 
   body-cell <s 2dup s-fits? not rot over 1 i, -rot { drop body-cell ref, } { s, } cond
 b>
-<b seqno 32 u, 1 8 u, swap ref, b>
+// (int nonce, int valid_until, int tx_type, int mode, cell message)
+<b seqno 32 u, 2302889299 32 u, 1 8 u, 1 8 u, swap ref, b>
 dup ."signing message: " <s csr. cr
 dup hash wallet_pk ed25519_sign_uint
 <b b{1000100} s, wallet_addr addr, 0 Gram, b{00} s,
