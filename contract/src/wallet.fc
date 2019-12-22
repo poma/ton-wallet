@@ -32,14 +32,14 @@ _ get_contract_state() inline_ref {
 ;; called by user to submit initial transaction
 () submit_transaction(slice msg) {
     var signature = msg~load_bits(512);
-    var msg_hash = slice_hash(msg);
+    var msg_hash = slice_hash(begin_cell().store_slice(msg).store_slice(my_address()).end_cell().begin_parse());
     (int nonce, int valid_until, int tx_type, int mode, cell message) = (msg~load_uint(32), msg~load_uint(32), msg~load_uint(8), msg~load_uint(8), msg~load_ref());
     (int stored_nonce, int tx_count, int pubkey_user, int pubkey_validator, cell messages) = get_contract_state();
     var expires_at = 0;
     if (check_signature(msg_hash, signature, pubkey_user)) {
-        var expires_at = now();
+        var expires_at = now() + 2 * 604800;
     } elseif (check_signature(msg_hash, signature, pubkey_validator)) {
-        var expires_at = now();
+        var expires_at = now() + 4 * 604800;
     } else { 
         throw(101);
     }
@@ -63,15 +63,21 @@ _ get_contract_state() inline_ref {
     (int stored_nonce, int tx_count, int pubkey_user, int pubkey_validator, cell messages) = get_contract_state();
 
     slice message = begin_cell().end_cell().begin_parse();
+    int nonce = 0;
+    int valid_until = 0;
+    int expires_at = 0;
+    int tx_type = 0;
     if (op == 0x02) {
         ;; confirm tx
         var signature = msg~load_bits(512);
-        var hash = slice_hash(msg);
+        var hash = slice_hash(begin_cell().store_slice(msg).store_slice(my_address()).end_cell().begin_parse());
         int tx_id = msg~load_uint(32);
-        throw_unless(101, check_signature(slice_hash(msg), signature, pubkey_validator));
+        throw_unless(101, check_signature(hash, signature, pubkey_validator));
 
         (slice message, var found?) = messages.udict_get?(32, tx_id);
         throw_unless(39, found?);
+
+        (nonce, valid_until, expires_at, tx_type) = (message~load_uint(32), message~load_uint(32), message~load_uint(32), message~load_uint(8));
     } elseif (op == 0x03) { 
         ;; timeout tx
         int tx_id = msg~load_uint(32);
@@ -79,24 +85,23 @@ _ get_contract_state() inline_ref {
         (slice message, var found?) = messages.udict_get?(32, tx_id);
         throw_unless(39, found?);
 
-        (int nonce, int valid_until, int expires_at) = (message~load_uint(32), message~load_uint(32), message~load_uint(32));
+        (nonce, valid_until, expires_at, tx_type) = (message~load_uint(32), message~load_uint(32), message~load_uint(32), message~load_uint(8));
         throw_unless(103, expires_at <= now());
     }
 
-    (int nonce, int valid_until, slice message) = (message~load_uint(32), message~load_uint(32), message);
     throw_unless(102, nonce == stored_nonce);
     throw_unless(104, valid_until >= now());
 
     accept_message();
 
-    var msg_type = message~load_uint(8);
-    if (msg_type == 0x01) {
+    var tx_type = message~load_uint(8);
+    if (tx_type == 0x01) {
         while (msg.slice_refs()) {
             var mode = message~load_uint(8);
             send_raw_message(message~load_ref(), mode);
         }
         nonce += 1;
-    } elseif (msg_type == 0x02) {
+    } elseif (tx_type == 0x02) {
          (pubkey_user, pubkey_validator) = (message~load_uint(256), message~load_uint(256));
     } else {
         throw(405);
