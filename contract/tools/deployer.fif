@@ -4,10 +4,6 @@
 
 0 =: wc  
 
-."Creating new pool in workchain " wc . cr
-"outputFileWithFiftAsm.fif" constant lightning-source
-
-
 "keys/user.pk" load-generate-keypair
 drop
 constant pubkey_user
@@ -37,6 +33,7 @@ dup hashu wc swap 2dup 2constant wallet_addr
 2dup "keys/contract.addr" save-address-verbose
 ."Non-bounceable address (for init): " 2dup 7 .Addr cr
 ."Bounceable address (for later access): " 6 .Addr cr
+
 
 <b b{1000100} s, wallet_addr addr, b{000010} s, swap <s s, b{0} s, b>
 
