@@ -31,3 +31,12 @@ The bot also allows the user to recover his keys in case he lost them, even thou
 ### Security considerations
 
 This is a hot wallet that is designed to be used regularly. If user goes offline for extended periods of times (multiple months), the validator will have an opportunity to execute a transaction that changes user keys and successfully wait for timeout without user noticing.
+
+## Deploy
+
+```sh
+cd contract
+./build.sh
+# transfer money to account
+./deploy.sh
+```
