@@ -139,3 +139,22 @@ int get_current_nonce() method_id {
     return stored_nonce;
 }
 
+int get_current_tx_count() method_id {
+    (_, int tx_count, _, _, _) = get_contract_state();
+    return tx_count;
+}
+
+_ get_tx_data(tx_id) method_id {
+    (_, _, _, _, cell messages) = get_contract_state();
+
+    (slice message, var found?) = messages.udict_get?(32, tx_id);
+    throw_unless(39, found?);
+
+    (int nonce, int valid_until, int expires_at, int tx_type) = (message~load_uint(32), message~load_uint(32), message~load_uint(32), message~load_uint(8));
+    if (tx_type == 0x01) {
+       return (nonce, tx_type, message~load_ref());
+    } else {
+        ;; key change tx
+        return (nonce, tx_type, begin_cell().end_cell()); 
+    }
+}

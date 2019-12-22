@@ -7,22 +7,23 @@ const bot = new Telegraf(process.env.BOT_TOKEN)
 const messages = {}
 
 bot.command('start', (ctx) => {
-    ctx.reply('Hello, my public key is ' + ctx.message.chat.id, Telegraf.Extra
+    ctx.reply('Hello, my public key is XXX, add it to your new wallet deployment', Telegraf.Extra
     .markdown()
     .markup((m) => m.keyboard([
         m.callbackButton('🔑 Recover key'),
-        m.callbackButton('👛 Register wallet'),
+        m.callbackButton('👛 Register new wallet'),
     ]).resize()))
 })
 
 bot.hears('🔑 Recover key', ctx => {
-    ctx.reply('Reply to this message with your new public key')
+    ctx.reply('This option allows you to replace the public key on your wallet in case you lost your private key, but ' +
+        'you\'ll be required to wait 1 month. Reply to this message with your new public key to proceed')
     // todo: send recover key transaction, print instructions to the user
 })
 
 bot.hears('👛 Register wallet', ctx => {
     ctx.reply('Reply to this message with your wallet address')
-    // todo: register address -> ctx.message.chat.id mapping on reply
+    // todo: register address -> ctx.message.chat.id mapping on reply, set up TON listener to new address
 })
 
 bot.on('callback_query', ctx => {
@@ -58,7 +59,7 @@ function confirm(chatId, txId, recipient, amount, txHash) {
 }
 
 bot.command('test', (ctx) => {
-    confirm(2526945, 'qss', 'q', 'w', 'e');
+    confirm(ctx.message.chat.id, 'qss', 'q', 'w', 'e');
 })
 
 bot.launch()
