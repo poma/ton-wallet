@@ -134,7 +134,8 @@ _ get_contract_state() inline_ref {
 
 ;; Getters
 
-(int) get_current_nonce() {
+int get_current_nonce() method_id {
     (int stored_nonce, _, _, _, _) = get_contract_state();
     return stored_nonce;
 }
+

@@ -10,6 +10,7 @@ drop
 constant pubkey_validator 
 
 
+
 PROGRAM{
   "build/wallet.fif" include
 }END>c constant code
@@ -26,10 +27,11 @@ b> constant storage
 
 <b b> constant body
 
-body <s recv_external code <s storage runvm 
+body <s 81260 code <s storage runvm 
 
-constant updated_storage
-// should be 0
+drop
 constant exit_code
+constant return_value
+
 ."Exit code " exit_code . cr
-."Updated storage: " cr updated_storage <s csr. cr
+."Return value: " return_value . cr
