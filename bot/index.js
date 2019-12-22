@@ -24,7 +24,7 @@ bot.command('start', (ctx) => {
 })
 
 bot.command('create', (ctx) => {
-    ctx.replyWithMarkdown('*Tx:* 0x00dead00beef\n*Amount:* 10 nanoGrams')
+    ctx.replyWithMarkdown(`*To:* 0x00dead00beef\n*Amount:* 10 nanoGrams\n*Tx:* 0x00dead00beef`)
 })
 
 bot.launch()

@@ -1,0 +1,71 @@
+#!/usr/bin/env fift -s
+"Asm.fif" include
+"TonUtil.fif" include
+
+"user.pk" load-generate-keypair
+constant user_pk
+constant user_pub
+0x10 constant user_addr
+
+"validator.pk" load-generate-keypair
+constant validator_pk
+constant validator_pub
+0x11 constant validator_addr
+
+PROGRAM{
+  "../wallet.fif" include
+}END>c constant code
+
+0x01 constant method
+
+<b
+  1 32 u,          // nonce
+  user_pub B,      // user pubkey
+  validator_pub B, // validator pubkey
+b> constant storage
+
+<b 
+  SEND_PAYADDR_CODE 8 u,
+  pool_address 256 u,
+  user_addr 256 u,
+b> constant user_message
+
+<b 
+  SEND_PAYADDR_CODE 8 u,
+  pool_address 256 u,
+  validator_addr 256 u,
+b> constant validator_message
+
+user_message hash user_pk ed25519_sign_uint constant user_signature
+validator_message hash validator_pk ed25519_sign_uint constant validator_signature
+
+<b 
+  SEND_CANCEL_CODE 8 u,
+  pool_address 256 u,
+b> constant sender_message
+
+sender_message hash user_pk ed25519_sign_uint constant sender_signature
+
+<b 
+  user_signature B, 
+  user_addr 256 u, 
+b> constant user_addr_cell
+
+<b 
+  validator_signature B, 
+  validator_addr 256 u, 
+b> constant validator_addr_cell
+
+<b 
+  method 32 u, 
+  sender_signature B, 
+  user_addr_cell ref,
+  validator_addr_cell ref,
+b> constant body
+
+body <s recv_external code <s storage runvm .s
+
+constant updated_storage
+constant exit_code
+."Exit code " exit_code . cr
+."Updated storage: " cr updated_storage <s csr. cr

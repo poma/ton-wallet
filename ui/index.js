@@ -8,4 +8,9 @@ app.get('/', function (req, res) {
     res.send('hello')
 })
 
+app.post('/tx', function (req, res) {
+    // just for testing purposes
+    res.send('hello')
+})
+
 app.listen(process.env.PORT || 8000)
