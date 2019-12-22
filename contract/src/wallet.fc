@@ -1,0 +1,108 @@
+;; wallet_id-
+;; valid_until+
+
+_ get_contract_state() inline_ref {
+     var ds = get_data().begin_parse();
+     var result = (
+            ds~load_uint(32),
+            ds~load_uint(32),
+            ds~load_uint(256),
+            ds~load_uint(256),
+            ds~load_dict()
+     );
+     ds.end_parse();
+     return result;
+}
+
+() set_contract_state(int nonce, tx_count, int pubkey_user, int pubkey_validator, cell messages) inline_ref { 
+     set_data(begin_cell()
+        .store_uint(nonce, 32)
+        .store_uint(tx_count, 32)
+        .store_uint(pubkey_user, 256)
+        .store_uint(pubkey_validator, 256)
+        .store_dict(messages)
+        .end_cell());
+}
+
+;; called by user to submit initial transaction
+() submit_transaction(slice msg) {
+    var signature = msg~load_bits(512);
+    var msg_hash = slice_hash(msg);
+    (int nonce, cell message) = (msg~load_uint(32), msg~load_ref());
+    (int stored_nonce, int tx_count, int pubkey_user, int pubkey_validator, cell messages) = get_contract_state();
+    throw_unless(101, check_signature(msg_hash, signature, pubkey_user));
+    throw_unless(102, nonce >= stored_nonce);
+
+    accept_message();
+
+    messages~udict_set_builder(32, tx_count, begin_cell()
+        .store_uint(1, 1));
+        ;; .store_uint(1, 8)
+        ;; .store_slice(message));
+
+    set_contract_state(nonce, tx_count + 1, pubkey_user, pubkey_validator, messages);
+}
+
+;; execute the transaction
+() execute_transaction(int op, slice msg) {
+    (int stored_nonce, int tx_count, int pubkey_user, int pubkey_validator, cell messages) = get_contract_state();
+
+    slice message = begin_cell().end_cell().begin_parse();
+    if (op == 0x02) {
+        ;; confirm tx
+        var signature = msg~load_bits(512);
+        var cs = msg;
+        (int tx_id, cell message) = (cs~load_uint(32), cs~load_ref());
+        throw_unless(101, check_signature(slice_hash(msg), signature, pubkey_validator));
+
+        (slice message, var found?) = messages.udict_get?(32, tx_id);
+        throw_unless(39, found?);
+
+
+    } elseif (op == 0x03) {
+        ;; timeout tx
+        int tx_id = msg~load_uint(32);
+
+        (slice message, var found?) = messages.udict_get?(32, tx_id);
+        throw_unless(39, found?);
+    }
+
+    (int nonce, int valid_until, slice message) = (message~load_uint(32), message~load_uint(32), message);
+    throw_unless(102, nonce == stored_nonce);
+    throw_unless(102, valid_until > now());
+
+    accept_message();
+
+    var msg_type = msg~load_uint(8);
+    if (msg_type == 0x00) {
+        while (msg.slice_refs()) {
+            var mode = msg~load_uint(8);
+            send_raw_message(msg~load_ref(), mode);
+        }
+    } elseif (msg_type == 0x01) {
+         (int pubkey_user, int pubkey_validator) = (msg~load_uint(256), msg~load_uint(256));
+    } else {
+        throw(405);
+    }
+
+    ;; todo save
+
+    ;; todo: garbage_collect
+}
+
+() recv_internal(slice msg) impure {
+  ;; do nothing for internal messages
+}
+
+() recv_external(slice msg) impure {
+    var op = msg~load_uint(8);
+    if (op == 0x01) {
+        submit_transaction(msg);
+    } elseif ((op == 0x02) | (op == 0x03)) {
+        execute_transaction(op, msg);
+    } else {
+        throw(404);
+    }
+}
+
+;; Getters
