@@ -1,0 +1,35 @@
+"Asm.fif" include
+"TonUtil.fif" include
+
+"keys/user.pk" load-generate-keypair
+drop
+constant pubkey_user
+
+"keys/validator.pk" load-generate-keypair
+drop
+constant pubkey_validator 
+
+
+PROGRAM{
+  "build/wallet.fif" include
+}END>c constant code
+
+
+<b 
+  0 32 u, // nonce
+  0 32 u,         // tx_count
+  pubkey_user B,
+  pubkey_validator B,
+  null dict,          // message queue      
+b> constant storage
+
+
+<b b> constant body
+
+body <s recv_external code <s storage runvm 
+
+constant updated_storage
+// should be 0
+constant exit_code
+."Exit code " exit_code . cr
+."Updated storage: " cr updated_storage <s csr. cr

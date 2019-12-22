@@ -7,8 +7,6 @@
 ."Creating new pool in workchain " wc . cr
 "outputFileWithFiftAsm.fif" constant lightning-source
 
-0 constant init_seqno
-true constant bounce
 
 "keys/user.pk" load-generate-keypair
 drop
@@ -21,7 +19,7 @@ constant pubkey_validator
 
 PROGRAM{
   "build/wallet.fif" include
-}END>c
+}END>c 
 
 <b 
   0 32 u, // nonce
@@ -29,26 +27,20 @@ PROGRAM{
   pubkey_user B,
   pubkey_validator B,
   null dict,          // message queue      
-b> // storage
+b>
 
 null // no libraries
 <b b{0011} s, 3 roll ref, rot ref, swap dict, b> // create StateInit
+dup ."StateInit: " <s csr. cr
 dup hashu wc swap 2dup 2constant wallet_addr
 ."new pool address = " 2dup .addr cr
 2dup "keys/contract.addr" save-address-verbose
 ."Non-bounceable address (for init): " 2dup 7 .Addr cr
 ."Bounceable address (for later access): " 6 .Addr cr
 
-<b 
-  b{1000100} s, 
-  wallet_addr addr, 
-  b{000010} s, 
-  swap <s s, 
-  b{0} s, 
-  0 32 u,
-b>
+<b b{1000100} s, wallet_addr addr, b{000010} s, swap <s s, b{0} s, b>
 
-// dup ."External message for initialization is " <s csr. cr
-2 boc+>B 
+dup ."External message for initialization is " <s csr. cr
+2 boc+>B dup Bx. cr
 "build/create_contract.boc" tuck B>file
 ."(Saved money giver creating query to file " type .")" cr
